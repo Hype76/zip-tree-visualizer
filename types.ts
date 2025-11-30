@@ -1,5 +1,6 @@
 export interface TreeNode {
   name: string;
+  path: string; // Added full path for easier access
   children?: TreeNode[];
 }
 

@@ -12,17 +12,17 @@ const App: React.FC = () => {
   const [result, setResult] = useState<TreeProcessingResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [fileName, setFileName] = useState<string>('');
+  const [file, setFile] = useState<File | null>(null); // Store raw file for previewing
 
-  const handleFileSelected = async (file: File) => {
+  const handleFileSelected = async (selectedFile: File) => {
     setLoading(true);
     setError(null);
-    setFileName(file.name);
+    setFile(selectedFile);
     setResult(null);
 
     setTimeout(async () => {
       try {
-        const data = await processZipFile(file);
+        const data = await processZipFile(selectedFile);
         setResult(data);
       } catch (err: any) {
         setError(err.message || 'An unexpected error occurred');
@@ -34,13 +34,13 @@ const App: React.FC = () => {
 
   const handleReset = () => {
     setResult(null);
-    setFileName('');
+    setFile(null);
     setError(null);
   };
 
   const loadDemoData = () => {
     setLoading(true);
-    setFileName('demo-project-v2.zip');
+    setFile(null); // No raw file for demo
     
     // Simulate processing delay for effect
     setTimeout(() => {
@@ -65,34 +65,38 @@ const App: React.FC = () => {
                 keywordMatches: { todos: 14, fixmes: 6, hacks: 3, secrets: 1 }
             },
             structure: [
-                { name: '.env', children: undefined },
-                { name: 'package.json', children: undefined },
-                { name: 'README.md', children: undefined },
+                { name: '.env', path: '.env', children: undefined },
+                { name: 'package.json', path: 'package.json', children: undefined },
+                { name: 'README.md', path: 'README.md', children: undefined },
                 { 
                     name: 'src', 
+                    path: 'src',
                     children: [
-                        { name: 'index.tsx', children: undefined },
-                        { name: 'App.tsx', children: undefined },
+                        { name: 'index.tsx', path: 'src/index.tsx', children: undefined },
+                        { name: 'App.tsx', path: 'src/App.tsx', children: undefined },
                         { 
                             name: 'components', 
+                            path: 'src/components',
                             children: [
-                                { name: 'Header.tsx', children: undefined },
-                                { name: 'Button.tsx', children: undefined }
+                                { name: 'Header.tsx', path: 'src/components/Header.tsx', children: undefined },
+                                { name: 'Button.tsx', path: 'src/components/Button.tsx', children: undefined }
                             ] 
                         },
                         {
                             name: 'utils',
+                            path: 'src/utils',
                             children: [
-                                { name: 'helpers.ts', children: undefined },
-                                { name: 'legacy_hack.ts', children: undefined }
+                                { name: 'helpers.ts', path: 'src/utils/helpers.ts', children: undefined },
+                                { name: 'legacy_hack.ts', path: 'src/utils/legacy_hack.ts', children: undefined }
                             ]
                         }
                     ] 
                 },
                 {
                     name: 'config',
+                    path: 'config',
                     children: [
-                        { name: 'aws_keys.json', children: undefined }
+                        { name: 'aws_keys.json', path: 'config/aws_keys.json', children: undefined }
                     ]
                 }
             ],
@@ -179,7 +183,7 @@ const App: React.FC = () => {
               {/* Toolbar */}
               <div className="flex items-center justify-between no-print">
                 <div>
-                  <h3 className="text-xl font-semibold text-white truncate max-w-md">{fileName}</h3>
+                  <h3 className="text-xl font-semibold text-white truncate max-w-md">{file?.name || 'Demo Project'}</h3>
                   <p className="text-sm text-slate-500">Processed in Browser • {formatBytes(result.totalSize)}</p>
                 </div>
                 <Button onClick={handleReset} variant="danger" icon={<RefreshCw className="w-4 h-4" />}>
@@ -194,8 +198,8 @@ const App: React.FC = () => {
               <SecurityReport security={result.security} />
 
               {/* Editor View with Search */}
-              <div className="h-[600px] min-h-[400px] tree-viewport">
-                <TreeDisplay data={result} fileName={fileName} />
+              <div className="tree-viewport">
+                <TreeDisplay data={result} fileName={file?.name || 'project.zip'} sourceFile={file || undefined} />
               </div>
             </div>
           )}

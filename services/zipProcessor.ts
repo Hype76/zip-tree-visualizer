@@ -14,7 +14,7 @@ const sortNodes = (a: TreeNode, b: TreeNode): number => {
 };
 
 /**
- * Converts a JSZip object into a nested TreeNode structure
+ * Converts a JSZip object into a nested TreeNode structure with full paths
  */
 const buildTreeStructure = (zip: JSZip): TreeNode[] => {
   const root: TreeNode[] = [];
@@ -25,17 +25,22 @@ const buildTreeStructure = (zip: JSZip): TreeNode[] => {
   const entries = Object.keys(zip.files).sort();
 
   entries.forEach((path) => {
+    // Remove trailing slash for folders to get clean name
     const cleanPath = path.endsWith('/') ? path.slice(0, -1) : path;
     const parts = cleanPath.split('/');
     const fileName = parts.pop() || '';
+    const parentPath = parts.join('/');
     
+    // Ensure we can traverse to this node
     let currentLevel = root;
-    
+    let currentPathBuilder = '';
+
     parts.forEach((part) => {
+      currentPathBuilder = currentPathBuilder ? `${currentPathBuilder}/${part}` : part;
       let existingFolder = currentLevel.find(n => n.name === part && n.children);
       
       if (!existingFolder) {
-        existingFolder = { name: part, children: [] };
+        existingFolder = { name: part, path: currentPathBuilder, children: [] };
         currentLevel.push(existingFolder);
       }
       
@@ -46,14 +51,18 @@ const buildTreeStructure = (zip: JSZip): TreeNode[] => {
 
     const isDir = zip.files[path].dir;
     const alreadyExists = currentLevel.find(n => n.name === fileName);
+    const fullNodePath = cleanPath;
     
     if (!alreadyExists) {
         currentLevel.push({ 
             name: fileName, 
+            path: fullNodePath,
             children: isDir ? [] : undefined 
         });
     } else if (isDir && !alreadyExists.children) {
         (alreadyExists as any).children = [];
+        // Ensure path is correct even if created implicitly earlier
+        alreadyExists.path = fullNodePath;
     }
   });
 
@@ -97,7 +106,7 @@ const calculateComplexity = (content: string): number => {
 const isTextFile = (filename: string): boolean => {
   const textExtensions = [
     'js', 'ts', 'jsx', 'tsx', 'html', 'css', 'scss', 'json', 'md', 'txt', 
-    'py', 'java', 'c', 'cpp', 'h', 'cs', 'php', 'rb', 'go', 'rs', 'xml', 'yaml', 'yml', 'env'
+    'py', 'java', 'c', 'cpp', 'h', 'cs', 'php', 'rb', 'go', 'rs', 'xml', 'yaml', 'yml', 'env', 'gitignore'
   ];
   const ext = filename.split('.').pop()?.toLowerCase() || '';
   return textExtensions.includes(ext);
@@ -116,6 +125,25 @@ const SENSITIVE_FILES = [
 
 const checkSensitiveFilename = (path: string): boolean => {
   return SENSITIVE_FILES.some(regex => regex.test(path));
+};
+
+export const extractFileContent = async (file: File, path: string): Promise<string> => {
+  try {
+    const zip = new JSZip();
+    await zip.loadAsync(file);
+    const zipObj = zip.file(path);
+    if (!zipObj) return "File not found in archive.";
+    
+    // Simple binary check based on extension
+    if (!isTextFile(path)) {
+        return "Binary file (image or compiled). Preview unavailable.";
+    }
+
+    const content = await zipObj.async('string');
+    return content;
+  } catch (e) {
+    return "Error reading file content.";
+  }
 };
 
 export const processZipFile = async (file: File): Promise<TreeProcessingResult> => {
