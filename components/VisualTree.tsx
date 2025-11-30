@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SecurityAnalysisResult, TreeNode, UnifiedFile, SecurityIssue } from '../types/security';
-import { Folder, FolderOpen, FileCode, FileImage, File as FileIcon, ChevronRight, Search, AlertTriangle, Bot, Check, Copy, Maximize2, Loader2, FileText as FileTextIcon } from 'lucide-react';
+import { Folder, FolderOpen, FileCode, FileImage, File as FileIcon, ChevronRight, Search, AlertTriangle, Bot, Check, Copy, Maximize2, Loader2, FileText as FileTextIcon, X, FileText } from 'lucide-react';
 import { Button } from './Button';
 
 // --- Icons & UI Helpers ---
@@ -214,6 +214,38 @@ const InteractiveNode: React.FC<{
   );
 };
 
+// --- Modal for ASCII ---
+
+const AsciiModal: React.FC<{ content: string; onClose: () => void }> = ({ content, onClose }) => {
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="w-full max-w-4xl bg-slate-900 border border-slate-700 rounded-lg shadow-2xl flex flex-col max-h-[80vh]">
+                <div className="flex items-center justify-between p-4 border-b border-slate-700 bg-slate-900 rounded-t-lg">
+                    <h3 className="font-semibold text-white flex items-center gap-2">
+                        <FileText className="w-4 h-4" /> ASCII Tree View
+                    </h3>
+                    <div className="flex items-center gap-2">
+                        <Button 
+                            variant="secondary"
+                            onClick={() => navigator.clipboard.writeText(content)}
+                            className="!py-1 !px-3 !text-xs"
+                            icon={<Copy className="w-3 h-3" />}
+                        >
+                            Copy to Clipboard
+                        </Button>
+                        <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
+                            <X className="w-5 h-5" />
+                        </button>
+                    </div>
+                </div>
+                <div className="flex-1 overflow-auto p-4 bg-slate-950/50 custom-scrollbar">
+                    <pre className="font-mono text-xs text-slate-300 leading-tight whitespace-pre">{content}</pre>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 // --- Main Component ---
 
 type AIFormat = 'gemini' | 'chatgpt' | 'claude';
@@ -227,17 +259,16 @@ export const VisualTree: React.FC<{
   const [aiCopied, setAiCopied] = useState(false);
   const [aiFormat, setAiFormat] = useState<AIFormat>('gemini');
   const [showAiMenu, setShowAiMenu] = useState(false);
+  const [showAscii, setShowAscii] = useState(false);
 
   // Map issues for badges
   const issuesMap = new Map<string, number>();
   data.issues.forEach(i => issuesMap.set(i.path, (issuesMap.get(i.path) || 0) + 1));
 
   // Trigger lazy load if selected node has no content but has a URL
-  React.useEffect(() => {
+  useEffect(() => {
       if (selectedNode && selectedNode.fileData && selectedNode.fileData.content === undefined && selectedNode.fileData.contentUrl) {
-          // We can optionally auto-fetch here, but let's leave it to the PreviewPane button to save API calls
-          // unless it's a small file?
-          // Let's just pass the request down
+          // Pass
       }
   }, [selectedNode]);
 
@@ -270,141 +301,147 @@ export const VisualTree: React.FC<{
   };
 
   return (
-    <div className="w-full flex flex-col bg-slate-900 border border-slate-800 rounded-lg shadow-2xl overflow-hidden h-[700px]">
-      
-      {/* Toolbar */}
-      <div className="flex flex-col gap-4 px-4 py-3 bg-slate-800/50 border-b border-slate-800 no-print z-20">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          
-          {/* Breadcrumbs */}
-          <div className="flex items-center overflow-hidden text-sm text-slate-400">
-             <Folder className="w-4 h-4 mr-2 text-slate-500" />
-             <span 
-                className={`cursor-pointer hover:text-white transition-colors ${!selectedNode ? 'font-bold text-blue-400' : ''}`}
-                onClick={() => setSelectedNode(null)}
-             >
-                root
-             </span>
-             {selectedNode && selectedNode.path.split('/').map((part, i, arr) => (
-                <div key={i} className="flex items-center whitespace-nowrap">
-                    <ChevronRight className="w-3 h-3 mx-1 text-slate-600" />
-                    <span className={i === arr.length - 1 ? 'font-bold text-blue-400' : ''}>
-                        {part}
-                    </span>
-                </div>
-             ))}
-          </div>
-
-          <div className="flex items-center gap-2">
-             <div className="relative md:max-w-xs">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
-                <input 
-                    type="text" 
-                    placeholder="Find file..." 
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-700 text-slate-200 text-xs rounded-md py-1.5 pl-8 pr-3 focus:outline-none focus:border-blue-500 placeholder:text-slate-600"
-                />
-            </div>
+    <>
+        <div className="w-full flex flex-col bg-slate-900 border border-slate-800 rounded-lg shadow-2xl overflow-hidden h-[700px]">
+        
+        {/* Toolbar */}
+        <div className="flex flex-col gap-4 px-4 py-3 bg-slate-800/50 border-b border-slate-800 no-print z-20">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             
-            <div className="relative flex items-center bg-indigo-600 rounded-md shadow-lg shadow-indigo-900/20 group">
-                <button 
-                    onClick={handleCopyForAI}
-                    className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-500 rounded-l-md border-r border-indigo-700 transition-colors"
+            {/* Breadcrumbs */}
+            <div className="flex items-center overflow-hidden text-sm text-slate-400">
+                <Folder className="w-4 h-4 mr-2 text-slate-500" />
+                <span 
+                    className={`cursor-pointer hover:text-white transition-colors ${!selectedNode ? 'font-bold text-blue-400' : ''}`}
+                    onClick={() => setSelectedNode(null)}
                 >
-                    {aiCopied ? <Check className="w-3 h-3" /> : <Bot className="w-3.5 h-3.5" />}
-                    <span>Copy for {aiFormat === 'chatgpt' ? 'ChatGPT' : aiFormat === 'claude' ? 'Claude' : 'Gemini'}</span>
-                </button>
-                <button 
-                    onClick={() => setShowAiMenu(!showAiMenu)}
-                    className="px-1.5 py-1.5 hover:bg-indigo-500 rounded-r-md transition-colors text-white"
-                >
-                    <ChevronRight className={`w-3.5 h-3.5 transition-transform ${showAiMenu ? 'rotate-90' : ''}`} />
-                </button>
+                    root
+                </span>
+                {selectedNode && selectedNode.path.split('/').map((part, i, arr) => (
+                    <div key={i} className="flex items-center whitespace-nowrap">
+                        <ChevronRight className="w-3 h-3 mx-1 text-slate-600" />
+                        <span className={i === arr.length - 1 ? 'font-bold text-blue-400' : ''}>
+                            {part}
+                        </span>
+                    </div>
+                ))}
+            </div>
+
+            <div className="flex items-center gap-2">
+                <div className="relative md:max-w-xs hidden md:block">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
+                    <input 
+                        type="text" 
+                        placeholder="Find file..." 
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-700 text-slate-200 text-xs rounded-md py-1.5 pl-8 pr-3 focus:outline-none focus:border-blue-500 placeholder:text-slate-600"
+                    />
+                </div>
                 
-                {showAiMenu && (
-                    <div className="absolute top-full right-0 mt-1 w-48 bg-slate-800 border border-slate-700 rounded-md shadow-xl z-50 py-1">
-                        <div className="px-3 py-2 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Select Target AI</div>
-                        {[
-                            { id: 'gemini', label: 'Gemini', desc: 'Standard Text' },
-                            { id: 'chatgpt', label: 'ChatGPT', desc: 'Markdown Wrapper' },
-                            { id: 'claude', label: 'Claude', desc: 'XML Tags' }
-                        ].map((fmt) => (
-                            <button
-                                key={fmt.id}
-                                onClick={() => { setAiFormat(fmt.id as AIFormat); setShowAiMenu(false); }}
-                                className={`w-full text-left px-3 py-2 text-xs flex flex-col hover:bg-slate-700 ${aiFormat === fmt.id ? 'bg-slate-700/50 text-blue-400' : 'text-slate-300'}`}
-                            >
-                                <span className="font-medium">{fmt.label}</span>
-                                <span className="text-[10px] text-slate-500">{fmt.desc}</span>
-                            </button>
-                        ))}
+                <div className="relative flex items-center bg-indigo-600 rounded-md shadow-lg shadow-indigo-900/20 group">
+                    <button 
+                        onClick={handleCopyForAI}
+                        className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-500 rounded-l-md border-r border-indigo-700 transition-colors"
+                    >
+                        {aiCopied ? <Check className="w-3 h-3" /> : <Bot className="w-3.5 h-3.5" />}
+                        <span className="hidden sm:inline">Copy for {aiFormat === 'chatgpt' ? 'ChatGPT' : aiFormat === 'claude' ? 'Claude' : 'Gemini'}</span>
+                        <span className="sm:hidden">AI Prompt</span>
+                    </button>
+                    <button 
+                        onClick={() => setShowAiMenu(!showAiMenu)}
+                        className="px-1.5 py-1.5 hover:bg-indigo-500 rounded-r-md transition-colors text-white"
+                    >
+                        <ChevronRight className={`w-3.5 h-3.5 transition-transform ${showAiMenu ? 'rotate-90' : ''}`} />
+                    </button>
+                    
+                    {showAiMenu && (
+                        <div className="absolute top-full right-0 mt-1 w-48 bg-slate-800 border border-slate-700 rounded-md shadow-xl z-50 py-1">
+                            <div className="px-3 py-2 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Select Target AI</div>
+                            {[
+                                { id: 'gemini', label: 'Gemini', desc: 'Standard Text' },
+                                { id: 'chatgpt', label: 'ChatGPT', desc: 'Markdown Wrapper' },
+                                { id: 'claude', label: 'Claude', desc: 'XML Tags' }
+                            ].map((fmt) => (
+                                <button
+                                    key={fmt.id}
+                                    onClick={() => { setAiFormat(fmt.id as AIFormat); setShowAiMenu(false); }}
+                                    className={`w-full text-left px-3 py-2 text-xs flex flex-col hover:bg-slate-700 ${aiFormat === fmt.id ? 'bg-slate-700/50 text-blue-400' : 'text-slate-300'}`}
+                                >
+                                    <span className="font-medium">{fmt.label}</span>
+                                    <span className="text-[10px] text-slate-500">{fmt.desc}</span>
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                <Button 
+                    variant="secondary" 
+                    onClick={() => setShowAscii(true)}
+                    className="!py-1.5 !px-3 !text-xs"
+                    icon={<FileText className="w-3 h-3" />}
+                >
+                    View ASCII
+                </Button>
+            </div>
+            </div>
+        </div>
+
+        <div className="flex-1 flex overflow-hidden">
+            <div className="w-full md:w-1/3 bg-slate-950/30 border-r border-slate-800 overflow-y-auto custom-scrollbar p-2">
+                {data.tree.map((node, i) => (
+                    <InteractiveNode 
+                        key={node.path + i} 
+                        node={node} 
+                        selectedPath={selectedNode?.fileData?.path || null}
+                        onSelect={setSelectedNode}
+                        issuesMap={issuesMap}
+                    />
+                ))}
+            </div>
+
+            <div className="hidden md:flex md:w-2/3 bg-slate-950 flex-col relative">
+                {selectedNode ? (
+                    <>
+                        <div className="flex items-center justify-between px-4 py-2 border-b border-slate-800 bg-slate-900/50">
+                            <div className="flex items-center gap-2">
+                                {getFileIcon(selectedNode.name)}
+                                <span className="text-sm font-medium text-slate-200">{selectedNode.name}</span>
+                            </div>
+                            {selectedNode.fileData && (
+                                <div className="text-xs text-slate-500 font-mono">
+                                    {selectedNode.fileData.type.toUpperCase()} • {(selectedNode.fileData.size/1024).toFixed(1)} KB
+                                </div>
+                            )}
+                        </div>
+                        <div className="flex-1 overflow-auto custom-scrollbar p-0">
+                            {selectedNode.fileData ? (
+                                <FilePreviewPane 
+                                    file={selectedNode.fileData} 
+                                    issues={data.issues.filter(i => i.path === selectedNode.fileData!.path)} 
+                                    onFetch={() => onFileContentRequest(selectedNode.fileData!)}
+                                />
+                            ) : (
+                                <div className="flex flex-col items-center justify-center h-full text-slate-500 opacity-50 space-y-2">
+                                    <FolderOpen className="w-16 h-16 stroke-1" />
+                                    <p>Folder Selected</p>
+                                </div>
+                            )}
+                        </div>
+                    </>
+                ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-slate-600 space-y-4">
+                        <Maximize2 className="w-16 h-16 stroke-1 opacity-20" />
+                        <p className="font-medium">Select a file to preview code & security issues</p>
                     </div>
                 )}
             </div>
-
-            <Button 
-                variant="secondary" 
-                onClick={async () => await navigator.clipboard.writeText(data.asciiTree)}
-                className="!py-1.5 !px-3 !text-xs hidden sm:inline-flex"
-                icon={<Copy className="w-3 h-3" />}
-            >
-                Copy Tree
-            </Button>
-          </div>
         </div>
-      </div>
-
-      <div className="flex-1 flex overflow-hidden">
-          <div className="w-full md:w-1/3 bg-slate-950/30 border-r border-slate-800 overflow-y-auto custom-scrollbar p-2">
-            {data.tree.map((node, i) => (
-                <InteractiveNode 
-                    key={node.path + i} 
-                    node={node} 
-                    selectedPath={selectedNode?.fileData?.path || null}
-                    onSelect={setSelectedNode}
-                    issuesMap={issuesMap}
-                />
-            ))}
-          </div>
-
-          <div className="hidden md:flex md:w-2/3 bg-slate-950 flex-col relative">
-            {selectedNode ? (
-                <>
-                    <div className="flex items-center justify-between px-4 py-2 border-b border-slate-800 bg-slate-900/50">
-                        <div className="flex items-center gap-2">
-                            {getFileIcon(selectedNode.name)}
-                            <span className="text-sm font-medium text-slate-200">{selectedNode.name}</span>
-                        </div>
-                        {selectedNode.fileData && (
-                            <div className="text-xs text-slate-500 font-mono">
-                                {selectedNode.fileData.type.toUpperCase()} • {(selectedNode.fileData.size/1024).toFixed(1)} KB
-                            </div>
-                        )}
-                    </div>
-                    <div className="flex-1 overflow-auto custom-scrollbar p-0">
-                        {selectedNode.fileData ? (
-                            <FilePreviewPane 
-                                file={selectedNode.fileData} 
-                                issues={data.issues.filter(i => i.path === selectedNode.fileData!.path)} 
-                                onFetch={() => onFileContentRequest(selectedNode.fileData!)}
-                            />
-                        ) : (
-                            <div className="flex flex-col items-center justify-center h-full text-slate-500 opacity-50 space-y-2">
-                                <FolderOpen className="w-16 h-16 stroke-1" />
-                                <p>Folder Selected</p>
-                            </div>
-                        )}
-                    </div>
-                </>
-            ) : (
-                <div className="flex flex-col items-center justify-center h-full text-slate-600 space-y-4">
-                    <Maximize2 className="w-16 h-16 stroke-1 opacity-20" />
-                    <p className="font-medium">Select a file to preview code & security issues</p>
-                </div>
-            )}
-          </div>
-      </div>
-    </div>
+        </div>
+        
+        {/* ASCII Modal */}
+        {showAscii && <AsciiModal content={data.asciiTree} onClose={() => setShowAscii(false)} />}
+    </>
   );
 };

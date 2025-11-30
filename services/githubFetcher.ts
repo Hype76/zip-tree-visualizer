@@ -35,7 +35,7 @@ export const parseGitHubUrl = (url: string) => {
 };
 
 const getFileCategory = (ext: string): FileCategory => {
-  const textExts = ['js', 'ts', 'jsx', 'tsx', 'html', 'css', 'json', 'md', 'txt', 'py', 'java', 'c', 'h', 'cpp', 'xml', 'yaml', 'yml', 'env', 'gitignore', 'svg', 'php', 'rb', 'go', 'rs'];
+  const textExts = ['js', 'ts', 'jsx', 'tsx', 'html', 'css', 'json', 'md', 'txt', 'py', 'java', 'c', 'h', 'cpp', 'xml', 'yaml', 'yml', 'env', 'gitignore', 'svg', 'php', 'rb', 'go', 'rs', 'lua', 'pl', 'sh', 'bat'];
   const imageExts = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'ico'];
   
   if (textExts.includes(ext)) return 'text';
@@ -104,30 +104,23 @@ export const fetchGitHubRepo = async (
     }
   });
 
-  // 3. Smart Content Fetching (Partial Scan)
-  // We can't fetch ALL files without hitting rate limits or being slow.
-  // We will fetch the top 20 text files by "interest" (e.g. root files, source code) to give *some* data.
-  // The rest will be lazy loaded by the UI.
+  // 3. Fetch ALL Text Files (Batched)
+  // We want to fetch everything to provide a full analysis, as requested.
+  // We filter out large files (> 1MB) to prevent browser crashing, but otherwise grab it all.
   
-  const textFiles = files.filter(f => f.type === 'text' && f.size < 500 * 1024); // < 500KB
-  // prioritize known config files and source code
-  const priorityFiles = textFiles.filter(f => 
-    f.path.match(/(package\.json|tsconfig\.json|\.env|README|index\.|server\.|app\.)/i)
-  ).slice(0, 10);
-  
-  const randomSample = textFiles
-    .filter(f => !priorityFiles.includes(f))
-    .slice(0, 10);
-
-  const filesToFetch = [...priorityFiles, ...randomSample];
+  const filesToFetch = files.filter(f => f.type === 'text' && f.size < 1024 * 1024); // < 1MB limit for safety
 
   if (filesToFetch.length > 0) {
-    progressCallback?.(`Scanning ${filesToFetch.length} priority files...`);
+    progressCallback?.(`Found ${filesToFetch.length} text files. Downloading content...`);
     
-    // Fetch in parallel batches
+    // Concurrency Limit (Batching) to be polite and avoid browser connection limits
     const BATCH_SIZE = 5;
-    for (let i = 0; i < filesToFetch.length; i += BATCH_SIZE) {
+    const total = filesToFetch.length;
+    let completed = 0;
+
+    for (let i = 0; i < total; i += BATCH_SIZE) {
         const batch = filesToFetch.slice(i, i + BATCH_SIZE);
+        
         await Promise.all(batch.map(async (f) => {
             try {
                 const res = await fetch(f.contentUrl!, { 
@@ -135,11 +128,19 @@ export const fetchGitHubRepo = async (
                 });
                 if (res.ok) {
                     f.content = await res.text();
+                } else if (res.status === 404 && !token) {
+                     // Sometimes raw.githubusercontent fails for private repos without token in a specific way
+                     // ignoring for now
                 }
             } catch (e) {
                 console.warn(`Failed to fetch ${f.path}`, e);
             }
         }));
+        
+        completed += batch.length;
+        if (completed % 10 === 0 || completed === total) {
+             progressCallback?.(`Downloading files: ${Math.min(completed, total)} / ${total}`);
+        }
     }
   }
 

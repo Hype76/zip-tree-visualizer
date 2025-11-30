@@ -101,18 +101,5 @@ export const analyzeZip = async (zipFile: File): Promise<SecurityAnalysisResult>
 export const analyzeGitHub = async (url: string, token?: string, progressCallback?: (msg: string) => void): Promise<SecurityAnalysisResult> => {
     const { files, repoSize } = await fetchGitHubRepo(url, token, progressCallback);
     const result = await runSecurityScan(files, 'github', repoSize);
-    
-    // Add a warning if we only scanned a subset
-    const scannedCount = files.filter(f => f.content).length;
-    const textFileCount = files.filter(f => f.type === 'text').length;
-    
-    if (scannedCount < textFileCount) {
-        result.alerts.push({
-            path: "ROOT",
-            issue: "large-file",
-            details: `GitHub Mode: Only scanned ${scannedCount} of ${textFileCount} text files for security issues to save bandwidth. Click files to load them.`
-        });
-    }
-
     return result;
 };
