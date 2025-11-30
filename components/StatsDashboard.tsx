@@ -1,6 +1,6 @@
 import React from 'react';
 import { TreeProcessingResult } from '../types';
-import { Code, Layers, FileDigit, Activity, Hash, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { Code, Layers, Activity, Hash, ShieldAlert, CheckCircle2 } from 'lucide-react';
 
 interface StatsDashboardProps {
   data: TreeProcessingResult;
@@ -97,7 +97,6 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({ data }) => {
         {/* Legend Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {displayExtensions.map((ext, i) => {
-             const colors = ['text-blue-500', 'text-purple-500', 'text-emerald-500', 'text-amber-500', 'text-rose-500', 'text-slate-500'];
              const dotColors = ['bg-blue-500', 'bg-purple-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-slate-500'];
              
              return (

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Copy, Check, FileText, Download, Search, FileJson, Printer } from 'lucide-react';
 import { Button } from './Button';
-import { TreeNode, TreeProcessingResult } from '../types';
+import { TreeProcessingResult } from '../types';
 import { generateAscii, filterTree } from '../services/zipProcessor';
 
 interface TreeDisplayProps {
