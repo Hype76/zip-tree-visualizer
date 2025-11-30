@@ -5,7 +5,7 @@ import { StatsDashboard } from './components/StatsDashboard';
 import { SecurityReport } from './components/SecurityReport';
 import { processZipFile, formatBytes } from './services/zipProcessor';
 import { TreeProcessingResult } from './types';
-import { FolderTree, RefreshCw, AlertCircle } from 'lucide-react';
+import { FolderTree, RefreshCw, AlertCircle, PlayCircle } from 'lucide-react';
 import { Button } from './components/Button';
 
 const App: React.FC = () => {
@@ -20,7 +20,6 @@ const App: React.FC = () => {
     setFileName(file.name);
     setResult(null);
 
-    // Small timeout to allow UI to update to loading state before heavy JS runs
     setTimeout(async () => {
       try {
         const data = await processZipFile(file);
@@ -39,11 +38,76 @@ const App: React.FC = () => {
     setError(null);
   };
 
+  const loadDemoData = () => {
+    setLoading(true);
+    setFileName('demo-project-v2.zip');
+    
+    // Simulate processing delay for effect
+    setTimeout(() => {
+        const mockResult: TreeProcessingResult = {
+            fileCount: 42,
+            folderCount: 8,
+            totalSize: 1024 * 450, // 450KB
+            totalLoc: 1840,
+            complexityScore: 320,
+            maxDepth: 5,
+            extensionBreakdown: [
+                { extension: 'ts', count: 18, size: 250000, lines: 1200 },
+                { extension: 'tsx', count: 12, size: 150000, lines: 600 },
+                { extension: 'json', count: 4, size: 2000, lines: 40 },
+                { extension: 'css', count: 2, size: 5000, lines: 0 },
+                { extension: 'md', count: 1, size: 1000, lines: 0 },
+                { extension: 'env', count: 1, size: 500, lines: 0 },
+            ],
+            security: {
+                riskScore: 25,
+                sensitiveFiles: ['.env', 'config/aws_keys.json'],
+                keywordMatches: { todos: 14, fixmes: 6, hacks: 3, secrets: 1 }
+            },
+            structure: [
+                { name: '.env', children: undefined },
+                { name: 'package.json', children: undefined },
+                { name: 'README.md', children: undefined },
+                { 
+                    name: 'src', 
+                    children: [
+                        { name: 'index.tsx', children: undefined },
+                        { name: 'App.tsx', children: undefined },
+                        { 
+                            name: 'components', 
+                            children: [
+                                { name: 'Header.tsx', children: undefined },
+                                { name: 'Button.tsx', children: undefined }
+                            ] 
+                        },
+                        {
+                            name: 'utils',
+                            children: [
+                                { name: 'helpers.ts', children: undefined },
+                                { name: 'legacy_hack.ts', children: undefined }
+                            ]
+                        }
+                    ] 
+                },
+                {
+                    name: 'config',
+                    children: [
+                        { name: 'aws_keys.json', children: undefined }
+                    ]
+                }
+            ],
+            treeString: `.\n├── .env\n├── README.md\n├── config/\n│   └── aws_keys.json\n├── package.json\n└── src/\n    ├── App.tsx\n    ├── components/\n    │   ├── Button.tsx\n    │   └── Header.tsx\n    ├── index.tsx\n    └── utils/\n        ├── helpers.ts\n        └── legacy_hack.ts`
+        };
+        setResult(mockResult);
+        setLoading(false);
+    }, 800);
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-blue-500/30">
       
       {/* Navbar */}
-      <header className="border-b border-slate-800 bg-slate-950/80 backdrop-blur-md sticky top-0 z-10">
+      <header className="border-b border-slate-800 bg-slate-950/80 backdrop-blur-md sticky top-0 z-10 no-print">
         <div className="max-w-6xl mx-auto px-4 md:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="bg-blue-600 p-1.5 rounded-lg">
@@ -80,10 +144,24 @@ const App: React.FC = () => {
           
           {/* File Input */}
           {!result && (
-            <div className="transition-all duration-500 animate-in fade-in slide-in-from-bottom-4">
-               <Uploader onFileSelected={handleFileSelected} isLoading={loading} />
+            <div className="transition-all duration-500 animate-in fade-in slide-in-from-bottom-4 flex flex-col items-center gap-6">
+               <div className="w-full">
+                 <Uploader onFileSelected={handleFileSelected} isLoading={loading} />
+               </div>
+               
+               {/* Demo Button */}
+               {!loading && (
+                   <button 
+                     onClick={loadDemoData}
+                     className="group flex items-center gap-2 text-slate-500 hover:text-blue-400 transition-colors text-sm font-medium px-4 py-2 rounded-full border border-transparent hover:border-blue-500/30 hover:bg-blue-500/10"
+                   >
+                     <PlayCircle className="w-4 h-4" />
+                     Try with sample data (Demo)
+                   </button>
+               )}
+
                {error && (
-                 <div className="mt-6 p-4 rounded-lg bg-red-950/30 border border-red-900/50 flex items-start gap-3 text-red-200">
+                 <div className="w-full mt-2 p-4 rounded-lg bg-red-950/30 border border-red-900/50 flex items-start gap-3 text-red-200">
                     <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
                     <div>
                       <h4 className="font-medium text-red-400">Processing Failed</h4>
@@ -99,7 +177,7 @@ const App: React.FC = () => {
             <div className="flex flex-col animate-in fade-in zoom-in-95 duration-300 gap-6">
               
               {/* Toolbar */}
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between no-print">
                 <div>
                   <h3 className="text-xl font-semibold text-white truncate max-w-md">{fileName}</h3>
                   <p className="text-sm text-slate-500">Processed in Browser • {formatBytes(result.totalSize)}</p>

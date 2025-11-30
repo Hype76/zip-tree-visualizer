@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Copy, Check, FileText, Download, Search, FileJson } from 'lucide-react';
+import { Copy, Check, FileText, Download, Search, FileJson, Printer } from 'lucide-react';
 import { Button } from './Button';
 import { TreeNode, TreeProcessingResult } from '../types';
 import { generateAscii, filterTree } from '../services/zipProcessor';
@@ -35,6 +35,10 @@ export const TreeDisplay: React.FC<TreeDisplayProps> = ({ data, fileName }) => {
     }
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   const handleDownloadTxt = () => {
     const element = document.createElement("a");
     const file = new Blob([displayContent], {type: 'text/plain'});
@@ -47,14 +51,11 @@ export const TreeDisplay: React.FC<TreeDisplayProps> = ({ data, fileName }) => {
 
   const handleDownloadJson = () => {
     const element = document.createElement("a");
-    // Remove big structure from JSON export to keep it clean, or keep it? 
-    // Let's keep metrics mostly
     const { treeString, structure, ...metrics } = data;
     const exportData = {
         fileName,
         generatedAt: new Date().toISOString(),
         metrics,
-        // Optional: Include flat list of files or structure if needed, but metrics are usually what people want in JSON
     };
     const file = new Blob([JSON.stringify(exportData, null, 2)], {type: 'application/json'});
     element.href = URL.createObjectURL(file);
@@ -67,10 +68,10 @@ export const TreeDisplay: React.FC<TreeDisplayProps> = ({ data, fileName }) => {
   if (!data) return null;
 
   return (
-    <div className="w-full h-full flex flex-col bg-slate-900 border border-slate-800 rounded-lg shadow-2xl overflow-hidden">
+    <div className="w-full h-full flex flex-col bg-slate-900 border border-slate-800 rounded-lg shadow-2xl overflow-hidden tree-content">
       
       {/* Header / Toolbar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between px-4 py-3 bg-slate-800/50 border-b border-slate-800 gap-3">
+      <div className="flex flex-col md:flex-row md:items-center justify-between px-4 py-3 bg-slate-800/50 border-b border-slate-800 gap-3 no-print">
         
         {/* Left: Label + Search */}
         <div className="flex items-center gap-4 flex-1">
@@ -93,6 +94,14 @@ export const TreeDisplay: React.FC<TreeDisplayProps> = ({ data, fileName }) => {
 
         {/* Right: Actions */}
         <div className="flex gap-2 shrink-0">
+            <Button 
+                variant="secondary" 
+                onClick={handlePrint}
+                className="!py-1.5 !px-3 !text-xs hidden md:inline-flex"
+                icon={<Printer className="w-3 h-3" />}
+            >
+                PDF / Print
+            </Button>
             <Button 
                 variant="secondary" 
                 onClick={handleDownloadJson}
