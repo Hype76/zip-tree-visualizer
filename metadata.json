@@ -1,0 +1,5 @@
+{
+  "name": "ZipTree Visualizer",
+  "description": "A professional client-side tool to extract and visualize ZIP file structures as ASCII trees instantly.",
+  "requestFramePermissions": []
+}
