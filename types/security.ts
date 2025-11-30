@@ -50,6 +50,7 @@ export interface SecurityAnalysisResult {
     totalFolders: number;
     totalSize: number;
     totalLoc: number;
+    complexity: number;
     extensions: { [key: string]: number };
     maxDepth: number;
   };

@@ -15,6 +15,7 @@ export const analyzeSecurity = async (zipFile: File): Promise<SecurityAnalysisRe
   
   let totalLoc = 0;
   let maxDepth = 0;
+  let totalComplexity = 0;
 
   // 2. Scan Files
   files.forEach(file => {
@@ -37,6 +38,18 @@ export const analyzeSecurity = async (zipFile: File): Promise<SecurityAnalysisRe
     if (file.type === 'text' && file.content) {
       const lines = file.content.split('\n').length;
       totalLoc += lines;
+      
+      // Calculate Complexity (Heuristic)
+      const complexityPatterns = [
+        /\bif\b/g, /\belse\b/g, /\bfor\b/g, /\bwhile\b/g, 
+        /\bswitch\b/g, /\bcase\b/g, /\bcatch\b/g, /\?\s*:/g, /&&/g, /\|\|/g
+      ];
+      let complexity = 0;
+      complexityPatterns.forEach(p => {
+         const matches = file.content!.match(p);
+         if (matches) complexity += matches.length;
+      });
+      totalComplexity += complexity;
       
       if (lines > 20000) {
         alerts.push({ path: file.path, issue: "large-file", details: `Text file has > 20k lines (${lines})` });
@@ -71,6 +84,7 @@ export const analyzeSecurity = async (zipFile: File): Promise<SecurityAnalysisRe
       totalFolders: files.filter(f => f.path.includes('/')).length, // approximate
       totalSize,
       totalLoc,
+      complexity: totalComplexity,
       maxDepth,
       extensions: extensionCounts
     }
