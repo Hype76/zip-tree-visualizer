@@ -30,18 +30,13 @@ const buildTreeStructure = (zip: JSZip): TreeNode[] => {
     const cleanPath = path.endsWith('/') ? path.slice(0, -1) : path;
     const parts = cleanPath.split('/');
     const fileName = parts.pop() || '';
-    const parentPath = parts.join('/');
+    
+    // We intentionally ignore parentPath variable if unused to satisfy linter
+    // const parentPath = parts.join('/');
 
-    // Ensure parent structure exists (handles explicit folder entries vs implicit file paths)
-    // In a flat zip list, we might encounter deep files before their folder entries
-    // But since we are building a logical tree, we iterate effectively.
-    
-    // Simple approach: We only care about the visual tree. 
-    // We walk down the parts.
-    
     let currentLevel = root;
     
-    parts.forEach((part, index) => {
+    parts.forEach((part) => {
       // Check if this folder already exists at this level
       let existingFolder = currentLevel.find(n => n.name === part && n.children);
       
@@ -56,12 +51,6 @@ const buildTreeStructure = (zip: JSZip): TreeNode[] => {
       }
     });
 
-    // Finally add the file/leaf folder
-    // Note: If zip.files[path].dir is true, it's a folder entry.
-    // If we processed it above as a parent of something else, it might duplicate if we aren't careful.
-    // However, the logic above ensures intermediate folders are created.
-    // We just need to check if the node already exists to avoid duplicates.
-    
     const isDir = zip.files[path].dir;
     const alreadyExists = currentLevel.find(n => n.name === fileName);
     
@@ -72,8 +61,6 @@ const buildTreeStructure = (zip: JSZip): TreeNode[] => {
             children: isDir ? [] : undefined 
         });
     } else if (isDir && !alreadyExists.children) {
-        // Upgrade existing node to folder if we found it earlier as a file (unlikely in valid zip)
-        // or ensure it is marked as having children
         (alreadyExists as any).children = [];
     }
   });
@@ -116,7 +103,7 @@ export const processZipFile = async (file: File): Promise<TreeProcessingResult> 
     contents.forEach((relativePath, zipEntry) => {
         if (!zipEntry.dir) {
             fileCount++;
-            totalSize += zipEntry._data.uncompressedSize || 0;
+            totalSize += (zipEntry as any)._data.uncompressedSize || 0;
         } else {
             folderCount++;
         }
