@@ -2,7 +2,7 @@ import JSZip from 'jszip';
 import { UnifiedFile, TreeNode, FileCategory } from '../types/security';
 
 // Helper: Determine file type
-const getFileCategory = (ext: string): FileCategory => {
+export const getFileCategory = (ext: string): FileCategory => {
   const textExts = ['js', 'ts', 'jsx', 'tsx', 'html', 'css', 'json', 'md', 'txt', 'py', 'java', 'c', 'h', 'cpp', 'xml', 'yaml', 'yml', 'env', 'gitignore', 'svg'];
   const imageExts = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'ico'];
   
@@ -12,7 +12,7 @@ const getFileCategory = (ext: string): FileCategory => {
 };
 
 // Helper: Build visual tree
-const buildTree = (files: UnifiedFile[]): TreeNode[] => {
+export const buildTree = (files: UnifiedFile[]): TreeNode[] => {
   const root: TreeNode[] = [];
   
   files.forEach(file => {
@@ -76,10 +76,6 @@ export const readZip = async (file: File): Promise<{ files: UnifiedFile[], tree:
   const loadedZip = await zip.loadAsync(file);
   const files: UnifiedFile[] = [];
 
-  // Parallel processing limit to prevent freezing UI on large zips
-  // We will load ALL files, but we need to be careful with memory.
-  // Strategy: Load content for text files < 2MB. Load binary header for all.
-  
   const entries = Object.keys(loadedZip.files).filter(path => !loadedZip.files[path].dir);
   
   const processEntry = async (path: string) => {
@@ -92,17 +88,10 @@ export const readZip = async (file: File): Promise<{ files: UnifiedFile[], tree:
     let content: string | undefined = undefined;
     let binary: Uint8Array | undefined = undefined;
 
-    // Load binary for signatures (and images)
-    // Limit: For huge files, maybe just grab the first chunk? 
-    // JSZip async('uint8array') loads the whole thing. 
-    // We will assume for a client-side tool, files < 50MB are manageable.
-    // If > 10MB, skip content loading to avoid crash, just analyze meta.
-    
-    if (size < 10 * 1024 * 1024) { // 10MB limit for analysis
+    if (size < 10 * 1024 * 1024) { 
         binary = await entry.async('uint8array');
         
-        if (type === 'text' && size < 2 * 1024 * 1024) { // 2MB limit for text
-             // Decode manually to avoid double memory usage if possible, or just use string
+        if (type === 'text' && size < 2 * 1024 * 1024) {
              content = await entry.async('string');
         }
     }

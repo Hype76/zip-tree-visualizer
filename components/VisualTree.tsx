@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { SecurityAnalysisResult, TreeNode, UnifiedFile, SecurityIssue } from '../types/security';
-import { Folder, FolderOpen, FileCode, FileImage, File as FileIcon, ChevronRight, Search, ShieldAlert, AlertTriangle, Bot, Check, Copy, Maximize2 } from 'lucide-react';
+import { Folder, FolderOpen, FileCode, FileImage, File as FileIcon, ChevronRight, Search, ShieldAlert, AlertTriangle, Bot, Check, Copy, Maximize2, Loader2, FileText as FileTextIcon } from 'lucide-react';
 import { Button } from './Button';
 
 // --- Icons & UI Helpers ---
@@ -13,13 +13,11 @@ const getFileIcon = (filename: string) => {
     case 'png': case 'jpg': case 'jpeg': case 'svg': case 'gif':
       return <FileImage className="w-4 h-4 text-purple-400" />;
     case 'md': case 'txt': case 'env':
-      return <FileText className="w-4 h-4 text-slate-400" />;
+      return <FileTextIcon className="w-4 h-4 text-slate-400" />;
     default:
       return <FileIcon className="w-4 h-4 text-slate-500" />;
   }
 };
-
-const FileText = ({ className }: { className?: string }) => <FileIcon className={className} />;
 
 // --- Syntax Highlighter (Polished) ---
 
@@ -77,18 +75,36 @@ const SyntaxHighlight = ({ content, issues }: { content: string, issues: Securit
 
 // --- Preview Component ---
 
-const FilePreviewPane = ({ file, issues }: { file: UnifiedFile, issues: SecurityIssue[] }) => {
-    if (file.type === 'image' && file.binary) {
-        const blob = new Blob([file.binary], { type: `image/${file.extension}` });
-        const url = URL.createObjectURL(blob);
-        return (
-            <div className="flex flex-col items-center justify-center h-full p-8 bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')]">
-                <div className="border border-slate-700 bg-slate-950 p-2 rounded shadow-2xl">
-                    <img src={url} alt={file.name} className="max-w-full max-h-[400px] object-contain" />
+const FilePreviewPane = ({ 
+    file, 
+    issues, 
+    onFetch 
+}: { 
+    file: UnifiedFile, 
+    issues: SecurityIssue[], 
+    onFetch: () => void 
+}) => {
+    
+    // Binary/Image Handling
+    if (file.type === 'image') {
+        if (file.binary) {
+             const blob = new Blob([file.binary], { type: `image/${file.extension}` });
+             const url = URL.createObjectURL(blob);
+             return (
+                <div className="flex flex-col items-center justify-center h-full p-8 bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')]">
+                    <img src={url} alt={file.name} className="max-w-full max-h-[400px] object-contain rounded shadow-lg" />
+                    <p className="mt-4 text-slate-500 font-mono text-xs">{file.name}</p>
                 </div>
-                <p className="mt-4 text-slate-500 font-mono text-xs">{file.name} • {(file.size/1024).toFixed(2)} KB</p>
-            </div>
-        );
+             );
+        } else if (file.contentUrl) {
+            // Display remote image directly
+            return (
+                 <div className="flex flex-col items-center justify-center h-full p-8 bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')]">
+                    <img src={file.contentUrl} alt={file.name} className="max-w-full max-h-[400px] object-contain rounded shadow-lg" />
+                    <p className="mt-4 text-slate-500 font-mono text-xs">{file.name} (Remote)</p>
+                </div>
+            )
+        }
     }
 
     if (file.type === 'binary' || (file.type === 'unknown' && !file.content)) {
@@ -96,15 +112,23 @@ const FilePreviewPane = ({ file, issues }: { file: UnifiedFile, issues: Security
             <div className="p-8 font-mono text-xs text-slate-400 flex flex-col items-center justify-center h-full">
                 <div className="bg-slate-900 p-6 rounded-lg border border-slate-800 text-center max-w-md">
                     <FileCode className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-                    <h3 className="text-slate-300 font-medium mb-2">Binary File Detected</h3>
-                    <p className="text-slate-500 mb-4">Hex dump visualization is disabled to save performance on large files.</p>
-                    <div className="bg-black/30 p-2 rounded font-mono text-xs text-slate-400">
-                        {file.binary 
-                            ? Array.from(file.binary.slice(0, 16)).map(b => b.toString(16).padStart(2,'0')).join(' ').toUpperCase() + " ..."
-                            : "No binary data loaded"
-                        }
-                    </div>
+                    <h3 className="text-slate-300 font-medium mb-2">Binary File</h3>
+                    <p className="text-slate-500 mb-4">Hex dump disabled.</p>
                 </div>
+            </div>
+        );
+    }
+
+    // Lazy Load Check
+    if (file.content === undefined && file.contentUrl) {
+        // Trigger fetch on mount if visible? Or just show button?
+        // Let's show a loading state if it's being fetched, or a button if waiting.
+        return (
+            <div className="flex flex-col items-center justify-center h-full space-y-4">
+                 <p className="text-slate-400">Content not loaded to save bandwidth.</p>
+                 <Button onClick={onFetch} icon={<Loader2 className="w-4 h-4" />}>
+                     Load File Content
+                 </Button>
             </div>
         );
     }
@@ -130,7 +154,6 @@ const InteractiveNode: React.FC<{
   const isSelected = node.fileData && selectedPath === node.fileData.path;
   const issueCount = node.fileData ? (issuesMap.get(node.fileData.path) || 0) : 0;
 
-  // Calculate if any children have issues to bubble up warning icon
   const hasChildIssues = (n: TreeNode): boolean => {
       if (n.fileData && (issuesMap.get(n.fileData.path) || 0) > 0) return true;
       return n.children ? n.children.some(hasChildIssues) : false;
@@ -163,7 +186,6 @@ const InteractiveNode: React.FC<{
           {node.name}
         </span>
 
-        {/* Badges */}
         {issueCount > 0 && (
              <span className="ml-auto flex items-center gap-1 text-[10px] font-bold bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded-full">
                 {issueCount}
@@ -196,7 +218,10 @@ const InteractiveNode: React.FC<{
 
 type AIFormat = 'gemini' | 'chatgpt' | 'claude';
 
-export const VisualTree: React.FC<{ data: SecurityAnalysisResult }> = ({ data }) => {
+export const VisualTree: React.FC<{ 
+    data: SecurityAnalysisResult; 
+    onFileContentRequest: (file: UnifiedFile) => void;
+}> = ({ data, onFileContentRequest }) => {
   const [selectedNode, setSelectedNode] = useState<TreeNode | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [aiCopied, setAiCopied] = useState(false);
@@ -207,20 +232,19 @@ export const VisualTree: React.FC<{ data: SecurityAnalysisResult }> = ({ data })
   const issuesMap = new Map<string, number>();
   data.issues.forEach(i => issuesMap.set(i.path, (issuesMap.get(i.path) || 0) + 1));
 
-  // Flatten tree for searching if needed, but we'll stick to visual tree
-  // For filtering, simpler to just highlight or basic filter. 
-  // Given the complexity of rebuilding the tree structure for filter, we will use the full tree
-  // and maybe just highlight.
-  
-  const handleCopyForAI = async () => {
-    // Generate context prompt
-    const contextName = selectedNode ? (selectedNode.children ? `folder "${selectedNode.name}"` : `file "${selectedNode.name}"`) : `project root`;
-    
-    // We can grab the ASCII for the whole project easily:
-    const treeAscii = data.asciiTree; 
-    // Ideally we would clip this to the selected node but for simplicity in this version we send full structure
-    // or specific file content if selected.
+  // Trigger lazy load if selected node has no content but has a URL
+  React.useEffect(() => {
+      if (selectedNode && selectedNode.fileData && selectedNode.fileData.content === undefined && selectedNode.fileData.contentUrl) {
+          // We can optionally auto-fetch here, but let's leave it to the PreviewPane button to save API calls
+          // unless it's a small file?
+          // Let's just pass the request down
+      }
+  }, [selectedNode]);
 
+  const handleCopyForAI = async () => {
+    const contextName = selectedNode ? (selectedNode.children ? `folder "${selectedNode.name}"` : `file "${selectedNode.name}"`) : `project root`;
+    const treeAscii = data.asciiTree; 
+    
     let contentToCopy = "";
     if (selectedNode && selectedNode.fileData && selectedNode.fileData.content) {
         contentToCopy = selectedNode.fileData.content;
@@ -283,7 +307,6 @@ export const VisualTree: React.FC<{ data: SecurityAnalysisResult }> = ({ data })
                 />
             </div>
             
-            {/* AI Split Button */}
             <div className="relative flex items-center bg-indigo-600 rounded-md shadow-lg shadow-indigo-900/20 group">
                 <button 
                     onClick={handleCopyForAI}
@@ -332,10 +355,7 @@ export const VisualTree: React.FC<{ data: SecurityAnalysisResult }> = ({ data })
         </div>
       </div>
 
-      {/* Split Pane */}
       <div className="flex-1 flex overflow-hidden">
-          
-          {/* Left: Tree */}
           <div className="w-full md:w-1/3 bg-slate-950/30 border-r border-slate-800 overflow-y-auto custom-scrollbar p-2">
             {data.tree.map((node, i) => (
                 <InteractiveNode 
@@ -348,7 +368,6 @@ export const VisualTree: React.FC<{ data: SecurityAnalysisResult }> = ({ data })
             ))}
           </div>
 
-          {/* Right: Preview */}
           <div className="hidden md:flex md:w-2/3 bg-slate-950 flex-col relative">
             {selectedNode ? (
                 <>
@@ -368,6 +387,7 @@ export const VisualTree: React.FC<{ data: SecurityAnalysisResult }> = ({ data })
                             <FilePreviewPane 
                                 file={selectedNode.fileData} 
                                 issues={data.issues.filter(i => i.path === selectedNode.fileData!.path)} 
+                                onFetch={() => onFileContentRequest(selectedNode.fileData!)}
                             />
                         ) : (
                             <div className="flex flex-col items-center justify-center h-full text-slate-500 opacity-50 space-y-2">

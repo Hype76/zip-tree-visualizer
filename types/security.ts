@@ -7,6 +7,7 @@ export interface UnifiedFile {
   size: number;
   content?: string;
   binary?: Uint8Array;
+  contentUrl?: string; // For GitHub raw fetching
   type: FileCategory;
   depth: number;
 }
@@ -40,6 +41,7 @@ export interface SecurityScore {
 }
 
 export interface SecurityAnalysisResult {
+  sourceType: 'zip' | 'github';
   files: UnifiedFile[];
   tree: TreeNode[];
   issues: SecurityIssue[];
