@@ -1,6 +1,6 @@
 import React from 'react';
 import { SecurityAnalysisResult } from '../types/security';
-import { ShieldCheck, ShieldAlert, FileText, Activity, Layers, Code, Hash, Download } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, Activity, Layers, Code, Hash, Download } from 'lucide-react';
 import { Button } from './Button';
 import { generateJSONReport, generatePDFReport, generateTextReport } from '../services/reportGenerator';
 

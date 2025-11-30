@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { SecurityAnalysisResult, TreeNode, UnifiedFile, SecurityIssue } from '../types/security';
-import { Folder, FolderOpen, FileCode, FileImage, File as FileIcon, ChevronRight, Search, ShieldAlert, AlertTriangle, Bot, Check, Copy, Maximize2, Loader2, FileText as FileTextIcon } from 'lucide-react';
+import { Folder, FolderOpen, FileCode, FileImage, File as FileIcon, ChevronRight, Search, AlertTriangle, Bot, Check, Copy, Maximize2, Loader2, FileText as FileTextIcon } from 'lucide-react';
 import { Button } from './Button';
 
 // --- Icons & UI Helpers ---

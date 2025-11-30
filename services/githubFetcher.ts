@@ -1,4 +1,4 @@
-import { UnifiedFile, TreeNode, FileCategory } from '../types/security';
+import { UnifiedFile, FileCategory } from '../types/security';
 
 interface GitHubTreeItem {
   path: string;
