@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Uploader } from './components/Uploader';
 import { TreeDisplay } from './components/TreeDisplay';
+import { StatsDashboard } from './components/StatsDashboard';
+import { SecurityReport } from './components/SecurityReport';
 import { processZipFile, formatBytes } from './services/zipProcessor';
 import { TreeProcessingResult } from './types';
 import { FolderTree, RefreshCw, AlertCircle } from 'lucide-react';
@@ -48,11 +50,11 @@ const App: React.FC = () => {
               <FolderTree className="w-5 h-5 text-white" />
             </div>
             <h1 className="font-bold text-lg tracking-tight text-white">
-              ZipTree <span className="text-blue-500">Visualizer</span>
+              ZipTree <span className="text-blue-500">Analytics</span>
             </h1>
           </div>
           <div className="text-xs font-medium text-slate-500 hidden sm:block">
-            Client-Side Processing v1.0
+            Client-Side Code Auditor v2.0
           </div>
         </div>
       </header>
@@ -63,12 +65,12 @@ const App: React.FC = () => {
         {!result && !loading && !error && (
           <div className="text-center mb-12 space-y-4">
             <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight">
-              Visualize ZIP Structure <br className="hidden md:block" />
-              <span className="text-slate-500">Without Extraction</span>
+              Visualize ZIP Structure & <br className="hidden md:block" />
+              <span className="text-blue-500">Code Complexity</span>
             </h2>
             <p className="text-slate-400 max-w-2xl mx-auto text-lg">
-              Upload a ZIP archive to instantly generate a clean, copy-paste ready ASCII file tree. 
-              Perfect for documentation and code reviews.
+              Upload a ZIP archive to instantly generate a copy-ready tree, 
+              count lines of code (LOC), and audit project security.
             </p>
           </div>
         )}
@@ -94,28 +96,28 @@ const App: React.FC = () => {
 
           {/* Results Display */}
           {result && (
-            <div className="flex flex-col h-[calc(100vh-12rem)] animate-in fade-in zoom-in-95 duration-300">
+            <div className="flex flex-col animate-in fade-in zoom-in-95 duration-300 gap-6">
               
               {/* Toolbar */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-                <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <div>
                   <h3 className="text-xl font-semibold text-white truncate max-w-md">{fileName}</h3>
-                  <div className="flex items-center gap-3 text-xs text-slate-400 uppercase tracking-wider font-medium">
-                    <span>{result.fileCount} Files</span>
-                    <span className="w-1 h-1 rounded-full bg-slate-600"></span>
-                    <span>{result.folderCount} Folders</span>
-                    <span className="w-1 h-1 rounded-full bg-slate-600"></span>
-                    <span>~{formatBytes(result.totalSize)}</span>
-                  </div>
+                  <p className="text-sm text-slate-500">Processed in Browser • {formatBytes(result.totalSize)}</p>
                 </div>
                 <Button onClick={handleReset} variant="danger" icon={<RefreshCw className="w-4 h-4" />}>
-                  Process Another
+                  Analyze Another
                 </Button>
               </div>
 
-              {/* Editor View */}
-              <div className="flex-1 min-h-0">
-                <TreeDisplay content={result.treeString} />
+              {/* Stats Dashboard */}
+              <StatsDashboard data={result} />
+
+              {/* Security Report (Collapsible) */}
+              <SecurityReport security={result.security} />
+
+              {/* Editor View with Search */}
+              <div className="h-[600px] min-h-[400px]">
+                <TreeDisplay data={result} fileName={fileName} />
               </div>
             </div>
           )}
