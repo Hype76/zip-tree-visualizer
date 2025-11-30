@@ -1,4 +1,4 @@
-import { UnifiedFile, SecurityAnalysisResult, SecurityIssue, FileSignatureAlert } from '../types/security';
+import { SecurityAnalysisResult, SecurityIssue, FileSignatureAlert } from '../types/security';
 import { readZip } from './zipReader';
 import { validateSignature } from './fileSignatures';
 import { scanContent } from './textScanner';

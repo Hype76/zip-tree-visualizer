@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bot, Check, Copy } from 'lucide-react';
+import { Bot, Check } from 'lucide-react';
 import { SecurityAnalysisResult } from '../types/security';
 import { Button } from './Button';
 

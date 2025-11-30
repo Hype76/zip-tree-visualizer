@@ -1,6 +1,6 @@
 import React from 'react';
 import { SecurityAnalysisResult } from '../types/security';
-import { AlertTriangle, ShieldAlert, AlertOctagon } from 'lucide-react';
+import { ShieldAlert, AlertOctagon } from 'lucide-react';
 
 export const SecurityWarnings: React.FC<{ result: SecurityAnalysisResult }> = ({ result }) => {
   const highPriority = result.issues.filter(i => i.category === 'danger' || i.category === 'secret');

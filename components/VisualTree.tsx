@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { SecurityAnalysisResult, TreeNode, UnifiedFile } from '../types/security';
-import { Folder, FolderOpen, FileCode, FileImage, File as FileIcon, ChevronRight, Search, ShieldAlert, Download } from 'lucide-react';
+import { Folder, FileCode, FileImage, File as FileIcon, ChevronRight, Search, ShieldAlert } from 'lucide-react';
 import { FilePreview } from './FilePreview';
 import { Button } from './Button';
-import { generateAsciiTree } from '../services/zipReader';
 
 interface VisualTreeProps {
   data: SecurityAnalysisResult;

@@ -1,5 +1,6 @@
-import { jsPDF } from "jspdf";
 import { SecurityAnalysisResult } from "../types/security";
+// @ts-ignore
+import { jsPDF } from "jspdf";
 
 export const generateJSONReport = (result: SecurityAnalysisResult) => {
   const json = JSON.stringify(result, (key, value) => {
