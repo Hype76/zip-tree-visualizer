@@ -129,7 +129,7 @@ export const TreeDisplay: React.FC<TreeDisplayProps> = ({ data, fileName }) => {
         </div>
       </div>
       
-      <div className="relative flex-1 overflow-auto custom-scrollbar group bg-slate-950/30">
+      <div className="relative flex-1 overflow-auto custom-scrollbar group bg-slate-950/30 tree-scroll-area">
         <pre className="p-6 font-mono text-sm leading-relaxed text-blue-100/90 whitespace-pre tab-4 select-text selection:bg-blue-500/30">
           <code>{displayContent}</code>
         </pre>

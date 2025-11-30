@@ -44,7 +44,7 @@
 
       /* Print Styles for PDF Generation */
       @media print {
-        @page { margin: 0.5cm; size: A4; }
+        @page { margin: 1cm; size: A4; }
         
         body { 
           background: white !important; 
@@ -53,39 +53,79 @@
           print-color-adjust: exact !important;
         }
 
-        /* Hide interactive elements */
-        header, .no-print, button, input {
+        /* Hide interactive elements and scrollbars */
+        header, .no-print, button, input, ::-webkit-scrollbar {
           display: none !important;
         }
 
         /* Adjust Layout for Print */
         main {
           padding: 0 !important;
+          margin: 0 !important;
           max-width: 100% !important;
+        }
+
+        #root {
+          display: block !important;
         }
 
         /* Force stats cards to look good on white paper */
         .bg-slate-900, .bg-slate-950, .border-slate-800 {
           background: white !important;
-          border-color: #e2e8f0 !important; /* slate-200 */
+          border-color: #cbd5e1 !important; /* slate-300 */
           color: black !important;
+          box-shadow: none !important;
         }
         
-        .text-slate-200, .text-slate-400, .text-slate-500 {
-          color: #1e293b !important; /* slate-800 */
+        .text-slate-200, .text-slate-400, .text-slate-500, .text-slate-100 {
+          color: #0f172a !important; /* slate-900 */
+        }
+
+        .text-blue-100\/90 {
+          color: #0f172a !important;
         }
         
-        /* Expand tree view */
-        .overflow-auto {
-          overflow: visible !important;
+        /* Expand tree view logic */
+        .tree-viewport {
           height: auto !important;
+          min-height: 0 !important;
+          overflow: visible !important;
+          display: block !important;
+        }
+
+        .tree-content {
+          height: auto !important;
+          border: none !important;
+          box-shadow: none !important;
+          overflow: visible !important;
+        }
+
+        .tree-scroll-area {
+          height: auto !important;
+          overflow: visible !important;
+          display: block !important;
+          background: white !important;
         }
         
         pre {
           white-space: pre-wrap !important;
           color: #000 !important;
           border: 1px solid #e2e8f0;
+          font-size: 11px !important;
+          padding: 10px !important;
+          page-break-inside: auto;
         }
+        
+        code {
+          font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Colors for badges in print */
+        .bg-blue-500 { color: #2563eb !important; background: transparent !important; font-weight: bold; }
+        .bg-purple-500 { color: #9333ea !important; background: transparent !important; font-weight: bold; }
+        .bg-emerald-500 { color: #059669 !important; background: transparent !important; font-weight: bold; }
+        .bg-amber-500 { color: #d97706 !important; background: transparent !important; font-weight: bold; }
+        .bg-red-500 { color: #dc2626 !important; background: transparent !important; font-weight: bold; }
       }
     </style>
   <script type="importmap">

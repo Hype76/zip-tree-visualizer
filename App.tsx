@@ -194,7 +194,7 @@ const App: React.FC = () => {
               <SecurityReport security={result.security} />
 
               {/* Editor View with Search */}
-              <div className="h-[600px] min-h-[400px]">
+              <div className="h-[600px] min-h-[400px] tree-viewport">
                 <TreeDisplay data={result} fileName={fileName} />
               </div>
             </div>
