@@ -29,7 +29,6 @@ const buildTreeStructure = (zip: JSZip): TreeNode[] => {
     const cleanPath = path.endsWith('/') ? path.slice(0, -1) : path;
     const parts = cleanPath.split('/');
     const fileName = parts.pop() || '';
-    const parentPath = parts.join('/');
     
     // Ensure we can traverse to this node
     let currentLevel = root;

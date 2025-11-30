@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Copy, Check, FileText, Download, Search, FileJson, Printer, Folder, FolderOpen, FileCode, FileImage, File as FileIcon, Eye, Terminal, Sparkles, ChevronRight, Bot, Maximize2 } from 'lucide-react';
+import { Copy, Check, FileText, Download, Search, Folder, FolderOpen, FileCode, FileImage, File as FileIcon, ChevronRight, Bot, Maximize2 } from 'lucide-react';
 import { Button } from './Button';
 import { TreeProcessingResult, TreeNode } from '../types';
 import { generateAscii, filterTree, extractFileContent } from '../services/zipProcessor';
@@ -26,7 +26,7 @@ const getFileIcon = (filename: string) => {
   }
 };
 
-const SyntaxHighlight = ({ content, ext }: { content: string, ext: string }) => {
+const SyntaxHighlight = ({ content }: { content: string }) => {
   // Ultra-lightweight syntax highlighter to avoid huge dependencies
   // Just colors keywords and strings
   const lines = content.split('\n');
@@ -364,7 +364,7 @@ export const TreeDisplay: React.FC<TreeDisplayProps> = ({ data, fileName, source
                             </div>
                         ) : (
                             fileContent ? (
-                                <SyntaxHighlight content={fileContent} ext={selectedNode.name.split('.').pop() || ''} />
+                                <SyntaxHighlight content={fileContent} />
                             ) : (
                                 <div className="text-center text-slate-500 mt-20">Unable to load content</div>
                             )
