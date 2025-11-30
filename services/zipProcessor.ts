@@ -100,7 +100,8 @@ export const processZipFile = async (file: File): Promise<TreeProcessingResult> 
     let folderCount = 0;
     let totalSize = 0; // Uncompressed size
 
-    contents.forEach((relativePath, zipEntry) => {
+    // NOTE: The first argument is relativePath. We prefix with _ to indicate to TS it is unused.
+    contents.forEach((_relativePath, zipEntry) => {
         if (!zipEntry.dir) {
             fileCount++;
             totalSize += (zipEntry as any)._data.uncompressedSize || 0;
